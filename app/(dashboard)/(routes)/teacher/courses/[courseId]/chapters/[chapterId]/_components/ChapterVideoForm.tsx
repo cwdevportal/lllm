@@ -132,10 +132,9 @@ export const ChapterVideoForm = ({
 
       {initialData.videoUrl && !isEditing && (
         <div className="text-xs text-muted-foreground mt-2">
-          If the video doesn't appear, ensure it's a valid public YouTube video.
+          If the video doesn&apos;t appear, ensure it&apos;s a valid public YouTube video.
         </div>
       )}
     </div>
   );
 };
-
