@@ -27,7 +27,7 @@ export const VideoPlayer = ({
   isLocked,
   completeOnEnd,
   title,
-  youtubeUrl = "https://www.youtube.com/watch?v=Big_aFLmekI&t=6268s",
+  youtubeUrl = "https://www.youtube.com/watch?v=zomiRD6ZQfo",
 }: VideoPlayerProps) => {
   const [isReady, setIsReady] = useState(false);
   const router = useRouter();
