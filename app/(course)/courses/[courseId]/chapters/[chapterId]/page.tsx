@@ -21,7 +21,7 @@ const ChapterIdPage = async({params}:{params:{courseId:string,chapterId:string}}
     const {
         chapter,
         course,
-        muxData,
+      
         attachments,
         nextChapter,
         userProgress,
@@ -61,7 +61,7 @@ const ChapterIdPage = async({params}:{params:{courseId:string,chapterId:string}}
                     title={chapter.title}
                     courseId={params.courseId}
                     nextChapterId={nextChapter?.id}
-                    playbackId={muxData?.playbackId!}
+                  
                     isLocked={isLocked}
                     completeOnEnd={completeOnEnd}
                  />
