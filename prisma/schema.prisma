@@ -56,12 +56,13 @@ model Chapter {
   id String @id @default(uuid())
   title String
   description String? @db.Text
-  videoUrl String? @db.Text
+  videoUrl String? @db.Text // Store full YouTube URL or just the video ID
+
   position Int
   isPublished Boolean @default(false)
   isFree Boolean @default(false)
 
-  muxData MuxData?
+  
 
   courseId String
   course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
@@ -73,16 +74,6 @@ model Chapter {
 
   @@index([courseId])
 }
-
-model MuxData {
-  id String @id @default(uuid())
-  assetId String
-  playbackId String?
-
-  chapterId String @unique
-  chapter Chapter @relation(fields: [chapterId], references: [id], onDelete: Cascade)
-}
-
 model UserProgress {
   id String @id @default(uuid())
   userId String
