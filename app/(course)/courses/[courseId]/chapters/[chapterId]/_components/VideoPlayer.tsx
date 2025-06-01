@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import axios from "axios";
 import { toast } from "react-hot-toast";
 import { useRouter } from "next/navigation";
@@ -10,14 +10,14 @@ import { cn } from "@/lib/utils";
 import { useConfettiSrore } from "@/hooks/use-confetti-store";
 
 interface VideoPlayerProps {
-  playbackId: string; // unused now but keep for interface compatibility
+  playbackId: string;
   courseId: string;
   chapterId: string;
   nextChapterId?: string;
   isLocked: boolean;
   completeOnEnd: boolean;
   title: string;
-  youtubeUrl?: string; // optional, defaults to your sample
+  youtubeUrl?: string;
 }
 
 export const VideoPlayer = ({
@@ -33,68 +33,17 @@ export const VideoPlayer = ({
   const router = useRouter();
   const confetti = useConfettiSrore();
 
-  // Extract YouTube video ID from the URL
+  const playerRef = useRef<HTMLIFrameElement>(null);
+
   const getYouTubeVideoId = (url: string) => {
-    const regExp =
-      /^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+    const regExp = /^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
     const match = url.match(regExp);
     return match && match[2].length === 11 ? match[2] : null;
   };
 
   const videoId = getYouTubeVideoId(youtubeUrl);
 
-  const playerRef = useRef<HTMLIFrameElement>(null);
-
-  // Listen for video end event via YouTube IFrame API
-  // For simplicity, we will add a YouTube iframe API to detect end
-
-  useEffect(() => {
-    if (!videoId) return;
-
-    // Load YouTube Iframe API script if not already loaded
-    if (!window.YT) {
-      const tag = document.createElement("script");
-      tag.src = "https://www.youtube.com/iframe_api";
-      document.body.appendChild(tag);
-    }
-
-    let player: YT.Player;
-
-    // YouTube API ready callback
-    (window as any).onYouTubeIframeAPIReady = () => {
-      player = new window.YT.Player(playerRef.current!, {
-        events: {
-          onReady: () => setIsReady(true),
-          onStateChange: (event: YT.OnStateChangeEvent) => {
-            // YT.PlayerState.ENDED === 0
-            if (event.data === window.YT.PlayerState.ENDED) {
-              onEnd();
-            }
-          },
-        },
-      });
-    };
-
-    // If YT is already loaded, initialize player immediately
-    if (window.YT && window.YT.Player) {
-      player = new window.YT.Player(playerRef.current!, {
-        events: {
-          onReady: () => setIsReady(true),
-          onStateChange: (event: YT.OnStateChangeEvent) => {
-            if (event.data === window.YT.PlayerState.ENDED) {
-              onEnd();
-            }
-          },
-        },
-      });
-    }
-
-    return () => {
-      if (player && player.destroy) player.destroy();
-    };
-  }, [videoId]);
-
-  const onEnd = async () => {
+  const onEnd = useCallback(async () => {
     try {
       if (completeOnEnd) {
         await axios.put(`/api/courses/${courseId}/chapters/${chapterId}/progress`, {
@@ -115,7 +64,42 @@ export const VideoPlayer = ({
     } catch {
       toast.error("Something went wrong");
     }
-  };
+  }, [completeOnEnd, courseId, chapterId, nextChapterId, router, confetti]);
+
+  useEffect(() => {
+    if (!videoId || isLocked) return;
+
+    let player: YT.Player;
+
+    const loadPlayer = () => {
+      player = new window.YT.Player(playerRef.current!, {
+        events: {
+          onReady: () => setIsReady(true),
+          onStateChange: (event: YT.OnStateChangeEvent) => {
+            if (event.data === window.YT.PlayerState.ENDED) {
+              onEnd();
+            }
+          },
+        },
+      });
+    };
+
+    if (!window.YT) {
+      const script = document.createElement("script");
+      script.src = "https://www.youtube.com/iframe_api";
+      script.async = true;
+      document.body.appendChild(script);
+      (window as any).onYouTubeIframeAPIReady = loadPlayer;
+    } else if (window.YT?.Player) {
+      loadPlayer();
+    }
+
+    return () => {
+      if (player && player.destroy) {
+        player.destroy();
+      }
+    };
+  }, [videoId, onEnd, isLocked]);
 
   if (!videoId) return <p>Invalid YouTube URL</p>;
 

@@ -58,6 +58,7 @@
     "zustand": "^4.4.1"
   },
   "devDependencies": {
+    "@types/youtube": "^0.1.2",
     "prisma": "^5.3.0"
   },
   "prisma": {
