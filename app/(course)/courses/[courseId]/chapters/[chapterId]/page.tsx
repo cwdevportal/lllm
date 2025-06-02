@@ -65,7 +65,7 @@ const ChapterIdPage = async({params}:{params:{courseId:string,chapterId:string}}
                     isLocked={isLocked}
                     completeOnEnd={completeOnEnd}
                     
-  videoUrl={chapter.videoUrl} // this line should be added
+                    videoUrl={chapter.videoUrl} // this line should be added
                  />
             </div>
             <div className="p-4 flex flex-col md:flex-row items-center justify-between">
