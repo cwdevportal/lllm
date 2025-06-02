@@ -16,7 +16,7 @@ interface VideoPlayerProps {
   isLocked: boolean;
   completeOnEnd: boolean;
   title: string;
-  youtubeUrl?: string;
+  videoUrl: string | null;
 }
 
 export const VideoPlayer = ({
@@ -26,56 +26,35 @@ export const VideoPlayer = ({
   isLocked,
   completeOnEnd,
   title,
-  youtubeUrl = "https://www.youtube.com/watch?v=zomiRD6ZQfo",
+  videoUrl,
 }: VideoPlayerProps) => {
   const [isReady, setIsReady] = useState(false);
   const router = useRouter();
   const confetti = useConfettiSrore();
-
   const playerRef = useRef<HTMLIFrameElement>(null);
 
-  console.log("VideoPlayer props:", {
-    courseId,
-    chapterId,
-    nextChapterId,
-    isLocked,
-    completeOnEnd,
-    title,
-    youtubeUrl,
-  });
-
   const getYouTubeVideoId = (url: string) => {
-    const regExp =
-      /^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+    const regExp = /^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
     const match = url.match(regExp);
     return match && match[2].length === 11 ? match[2] : null;
   };
 
-  const videoId = getYouTubeVideoId(youtubeUrl);
-  console.log("Extracted videoId:", videoId);
+  // Extract the video ID from the provided videoUrl (which is a YouTube watch link)
+  const videoId = videoUrl ? getYouTubeVideoId(videoUrl) : null;
 
   const onEnd = useCallback(async () => {
-    console.log("Video ended!");
-
     try {
-      if (true /* forced to true for testing */) {
-        await axios.put(
-          `/api/courses/${courseId}/chapters/${chapterId}/progress`,
-          {
-            isCompleted: true,
-          }
-        );
+      await axios.put(`/api/courses/${courseId}/chapters/${chapterId}/progress`, {
+        isCompleted: true,
+      });
 
-        if (!nextChapterId) {
-          confetti.onOpen();
-        }
+      if (!nextChapterId) confetti.onOpen();
 
-        toast.success("Progress updated");
-        router.refresh();
+      toast.success("Progress updated");
+      router.refresh();
 
-        if (nextChapterId) {
-          router.push(`/courses/${courseId}/chapters/${nextChapterId}`);
-        }
+      if (nextChapterId) {
+        router.push(`/courses/${courseId}/chapters/${nextChapterId}`);
       }
     } catch (err) {
       console.error("Error in onEnd:", err);
@@ -91,14 +70,9 @@ export const VideoPlayer = ({
     const loadPlayer = () => {
       player = new window.YT.Player(playerRef.current!, {
         events: {
-          onReady: () => {
-            console.log("YouTube player ready");
-            setIsReady(true);
-          },
+          onReady: () => setIsReady(true),
           onStateChange: (event: YT.OnStateChangeEvent) => {
-            console.log("Player state changed:", event.data);
             if (event.data === window.YT.PlayerState.ENDED) {
-              console.log("Triggering onEnd...");
               onEnd();
             }
           },
@@ -123,7 +97,7 @@ export const VideoPlayer = ({
     };
   }, [videoId, onEnd, isLocked]);
 
-  if (!videoId) return <p>Invalid YouTube URL</p>;
+  if (!videoId) return <p>Invalid video URL</p>;
 
   return (
     <div className="relative aspect-video">
@@ -145,7 +119,8 @@ export const VideoPlayer = ({
           className={cn(!isReady && "hidden")}
           width="100%"
           height="100%"
-          src={`https://www.youtube.com/embed/${videoId}?enablejsapi=1&autoplay=1&controls=1`}
+          src={`https://www.youtube-nocookie.com/embed/${videoId}?enablejsapi=1&modestbranding=1&rel=0&controls=1&fs=1`}
+          style={{ border: "none" }}
           allow="autoplay; encrypted-media"
           allowFullScreen
         />
