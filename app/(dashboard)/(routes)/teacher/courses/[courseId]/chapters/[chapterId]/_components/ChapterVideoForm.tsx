@@ -18,20 +18,26 @@ interface ChapterVideoProps {
 
 const formSchema = z.object({
   videoUrl: z.string().min(1),
+  
 });
 
 function getYouTubeEmbedUrl(videoUrl: string): string {
+  console.log("Parsing embed URL from:", videoUrl);
   try {
     const url = new URL(videoUrl);
 
-    // Handles both youtu.be and youtube.com formats
     if (url.hostname === "youtu.be") {
-      return `https://www.youtube.com/embed/${url.pathname.slice(1)}`;
+      const embedUrl = `https://www.youtube.com/embed/${url.pathname.slice(1)}`;
+      console.log("Parsed short URL embed:", embedUrl);
+      return embedUrl;
     }
 
     const videoId = url.searchParams.get("v");
-    return videoId ? `https://www.youtube.com/embed/${videoId}` : "";
+    const embedUrl = videoId ? `https://www.youtube.com/embed/${videoId}` : "";
+    console.log("Parsed full URL embed:", embedUrl);
+    return embedUrl;
   } catch (e) {
+    console.error("Invalid URL:", videoUrl, e);
     return "";
   }
 }
@@ -45,15 +51,21 @@ export const ChapterVideoForm = ({
   const [videoUrlInput, setVideoUrlInput] = useState(initialData.videoUrl || "");
   const router = useRouter();
 
-  const toggleEdit = () => setIsEditing((current) => !current);
+  const toggleEdit = () => {
+    console.log("Toggling edit mode. Current state:", isEditing);
+    setIsEditing((current) => !current);
+  };
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    console.log("Submitting video URL:", values);
     try {
       await axios.patch(`/api/courses/${courseId}/chapters/${chapterId}`, values);
       toast.success("Chapter updated");
+      console.log("Successfully updated chapter");
       toggleEdit();
       router.refresh();
     } catch (error) {
+      console.error("Error updating chapter:", error);
       toast.error("Something went wrong");
     }
   };
@@ -106,8 +118,10 @@ export const ChapterVideoForm = ({
         <form
           onSubmit={(e) => {
             e.preventDefault();
+            console.log("Form submitted with input:", videoUrlInput);
             const parsed = formSchema.safeParse({ videoUrl: videoUrlInput });
             if (!parsed.success) {
+              console.warn("Invalid input:", parsed.error.format());
               toast.error("Please enter a valid video URL");
               return;
             }
@@ -117,7 +131,10 @@ export const ChapterVideoForm = ({
           <input
             type="text"
             value={videoUrlInput}
-            onChange={(e) => setVideoUrlInput(e.target.value)}
+            onChange={(e) => {
+              console.log("Input changed to:", e.target.value);
+              setVideoUrlInput(e.target.value);
+            }}
             placeholder="Paste YouTube video URL (e.g. https://youtu.be/xyz)"
             className="w-full px-4 py-2 border rounded-md mt-4"
           />

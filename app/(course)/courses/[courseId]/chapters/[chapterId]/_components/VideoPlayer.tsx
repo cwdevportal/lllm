@@ -10,7 +10,6 @@ import { cn } from "@/lib/utils";
 import { useConfettiSrore } from "@/hooks/use-confetti-store";
 
 interface VideoPlayerProps {
-
   courseId: string;
   chapterId: string;
   nextChapterId?: string;
@@ -35,20 +34,37 @@ export const VideoPlayer = ({
 
   const playerRef = useRef<HTMLIFrameElement>(null);
 
+  console.log("VideoPlayer props:", {
+    courseId,
+    chapterId,
+    nextChapterId,
+    isLocked,
+    completeOnEnd,
+    title,
+    youtubeUrl,
+  });
+
   const getYouTubeVideoId = (url: string) => {
-    const regExp = /^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+    const regExp =
+      /^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
     const match = url.match(regExp);
     return match && match[2].length === 11 ? match[2] : null;
   };
 
   const videoId = getYouTubeVideoId(youtubeUrl);
+  console.log("Extracted videoId:", videoId);
 
   const onEnd = useCallback(async () => {
+    console.log("Video ended!");
+
     try {
-      if (completeOnEnd) {
-        await axios.put(`/api/courses/${courseId}/chapters/${chapterId}/progress`, {
-          isCompleted: true,
-        });
+      if (true /* forced to true for testing */) {
+        await axios.put(
+          `/api/courses/${courseId}/chapters/${chapterId}/progress`,
+          {
+            isCompleted: true,
+          }
+        );
 
         if (!nextChapterId) {
           confetti.onOpen();
@@ -61,10 +77,11 @@ export const VideoPlayer = ({
           router.push(`/courses/${courseId}/chapters/${nextChapterId}`);
         }
       }
-    } catch {
+    } catch (err) {
+      console.error("Error in onEnd:", err);
       toast.error("Something went wrong");
     }
-  }, [completeOnEnd, courseId, chapterId, nextChapterId, router, confetti]);
+  }, [courseId, chapterId, nextChapterId, router, confetti]);
 
   useEffect(() => {
     if (!videoId || isLocked) return;
@@ -74,9 +91,14 @@ export const VideoPlayer = ({
     const loadPlayer = () => {
       player = new window.YT.Player(playerRef.current!, {
         events: {
-          onReady: () => setIsReady(true),
+          onReady: () => {
+            console.log("YouTube player ready");
+            setIsReady(true);
+          },
           onStateChange: (event: YT.OnStateChangeEvent) => {
+            console.log("Player state changed:", event.data);
             if (event.data === window.YT.PlayerState.ENDED) {
+              console.log("Triggering onEnd...");
               onEnd();
             }
           },
