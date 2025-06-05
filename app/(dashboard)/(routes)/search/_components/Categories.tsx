@@ -18,7 +18,7 @@ interface CategoriesProps {
 const iconMap: Record<Category["name"], IconType> = {
   "Beginner Level": FcIdea,
   "Intermediate Level": FcMindMap, // 🔁 Replaced FcComboChart with FcMindMap
-  "Tutor Level": FcConferenceCall,
+  "Advanced Level": FcConferenceCall,
 };
 
 export const Categories = ({ items }: CategoriesProps) => {
