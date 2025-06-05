@@ -82,7 +82,6 @@ export const getChapter = async ({ userId, courseId, chapterId }: GetChapterProp
       purchase,
     };
   } catch (error) {
-    console.log("[GET_CHAPTER]", error);
     return {
       chapter: null,
       course: null,

@@ -37,6 +37,7 @@
     "eslint-config-next": "13.4.12",
     "framer-motion": "^12.16.0",
     "lucide-react": "^0.276.0",
+    "mysql2": "^3.14.1",
     "next": "^14.0.0",
     "postcss": "8.4.29",
     "query-string": "^8.1.0",

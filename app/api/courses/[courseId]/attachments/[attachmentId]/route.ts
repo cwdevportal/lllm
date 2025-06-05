@@ -33,7 +33,6 @@ export async function DELETE( req:Request ,{ params }:{ params: { courseId : str
         return NextResponse.json("Attachment Deleted");
         
     } catch (error) {
-        console.log("[COURSES_ID_ATTACHMENTS]",error)
         return new NextResponse('Internal Error', {status:500})
     }
 }

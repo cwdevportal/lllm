@@ -23,7 +23,6 @@ export async function PATCH(req: Request, { params }: { params: { courseId: stri
 
     return NextResponse.json(course);
   } catch (error) {
-    console.log("[COURSES_ID]", error);
     return new NextResponse("Internal Error", { status: 500 });
   }
 }
@@ -66,7 +65,6 @@ export async function DELETE(req: Request, { params }: { params: { courseId: str
 
     return NextResponse.json(deletedCourse);
   } catch (error) {
-    console.log("[COURSES_ID_DELETE]", error);
     return new NextResponse("Internal Error", { status: 500 });
   }
 }

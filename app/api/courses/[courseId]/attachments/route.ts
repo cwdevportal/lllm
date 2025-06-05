@@ -34,7 +34,6 @@ export async function POST( req:Request ,{ params }:{ params: { courseId : strin
         return NextResponse.json(attachmnet);
         
     } catch (error) {
-        console.log("[COURSES_ID_ATTACHMENTS]",error)
         return new NextResponse('Internal Error', {status:500})
     }
 }

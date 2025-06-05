@@ -37,16 +37,7 @@ export const VideoPlayer = ({
 
   const actualVideoUrl = videoUrl || youtubeUrl;
 
-  console.log("VideoPlayer props:", {
-    courseId,
-    chapterId,
-    nextChapterId,
-    isLocked,
-    completeOnEnd,
-    title,
-    videoUrl,
-    youtubeUrl,
-  });
+
 
   const getYouTubeVideoId = (url: string) => {
     const regExp = /^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;

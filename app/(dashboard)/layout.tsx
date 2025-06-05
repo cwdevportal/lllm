@@ -20,7 +20,6 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
     course: "",
   });
 
-  // On load, check if completed or resume formData
   useEffect(() => {
     const completed = localStorage.getItem("formCompleted") === "true";
     setFormCompleted(completed);
@@ -30,7 +29,6 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
       const parsed = JSON.parse(savedData);
       setFormData(parsed);
 
-      // Restore progress based on first empty field
       const nextIndex = steps.findIndex((step) => !parsed[step]);
       setStepIndex(nextIndex >= 0 ? nextIndex : steps.length - 1);
     }
@@ -53,8 +51,31 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
     if (stepIndex < steps.length - 1) {
       setStepIndex((i) => i + 1);
     } else {
+      // Mark form as completed
       localStorage.setItem("formCompleted", "true");
       setFormCompleted(true);
+
+      // Save selected course to localStorage
+      const selectedCourse = {
+        id: formData.course.toLowerCase().replace(/\s+/g, "-"),
+        title: formData.course,
+        imageUrl: "/default-course.jpg", // Replace with actual image if needed
+        chapters: [],
+        price: 0,
+        progress: 0,
+        category: { name: "Self-Enrolled" },
+      };
+
+      const current = JSON.parse(localStorage.getItem("savedCourses") || "[]");
+
+      const alreadyExists = current.some(
+        (course: { id: string }) => course.id === selectedCourse.id
+      );
+
+      if (!alreadyExists) {
+        current.push(selectedCourse);
+        localStorage.setItem("savedCourses", JSON.stringify(current));
+      }
     }
   };
 

@@ -48,7 +48,6 @@ export async function PATCH(req: Request, { params }: { params: { courseId: stri
 
     return NextResponse.json(publishedCourse);
   } catch (error) {
-    console.log("[CHAPTER_ID_PUBLISH]", error);
     return new NextResponse("internal error", { status: 500 });
   }
 }

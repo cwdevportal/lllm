@@ -46,7 +46,6 @@ export async function POST( req:Request ,{ params }:{ params: { courseId : strin
         return NextResponse.json(chapter);
         
     } catch (error) {
-        console.log("[CHAPTERS_POST]",error)
         return new NextResponse('Internal Error', {status:500})
     }
 }

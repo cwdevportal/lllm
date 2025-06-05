@@ -36,7 +36,6 @@ export async function PATCH(req:Request,{params}:{params:{courseId:string}}){
           return NextResponse.json(unPublishedCourse)
 
     } catch (error) {
-        console.log('[CHAPTER_ID_UNPUBLISH',error)
         return new NextResponse('internel error',{status:500})
     }
 }

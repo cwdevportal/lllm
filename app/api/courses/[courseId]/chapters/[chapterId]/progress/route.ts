@@ -35,7 +35,6 @@ export async function PUT(
             return NextResponse.json(userProgress)
 
         } catch (error) {
-            console.log("[PROGRESS]",error)
             return new NextResponse('Internal Error', {status:500})
         }
 }
