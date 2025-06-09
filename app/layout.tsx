@@ -8,7 +8,7 @@ import { ConfettiProvider } from '@/components/providers/ConfettiProvider'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'LMS-Platform',
+  title: 'Acomultimedia LMS-Platform',
   description: 'Courses For Free',
 }
 

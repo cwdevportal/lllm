@@ -5,16 +5,15 @@ import { Navbar } from "./_components/Navbar";
 import { SideBar } from "./_components/SideBar";
 import { motion, AnimatePresence } from "framer-motion";
 
-const steps = ["name", "address", "phone", "referral", "course"] as const;
-type Step = typeof steps[number];
+const steps = ["name", "phone", "referral", "course"] as const;
 
 const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const [formCompleted, setFormCompleted] = useState<boolean | null>(null);
+  const [showLogo, setShowLogo] = useState(false);
   const [stepIndex, setStepIndex] = useState(0);
 
   const [formData, setFormData] = useState({
     name: "",
-    address: "",
     phone: "",
     referral: "",
     course: "",
@@ -31,6 +30,13 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
 
       const nextIndex = steps.findIndex((step) => !parsed[step]);
       setStepIndex(nextIndex >= 0 ? nextIndex : steps.length - 1);
+    }
+
+    if (completed) {
+      setShowLogo(true);
+      setTimeout(() => {
+        setShowLogo(false);
+      }, 2000);
     }
   }, []);
 
@@ -51,15 +57,13 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
     if (stepIndex < steps.length - 1) {
       setStepIndex((i) => i + 1);
     } else {
-      // Mark form as completed
       localStorage.setItem("formCompleted", "true");
       setFormCompleted(true);
 
-      // Save selected course to localStorage
       const selectedCourse = {
         id: formData.course.toLowerCase().replace(/\s+/g, "-"),
         title: formData.course,
-        imageUrl: "/default-course.jpg", // Replace with actual image if needed
+        imageUrl: "/default-course.jpg",
         chapters: [],
         price: 0,
         progress: 0,
@@ -76,6 +80,11 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
         current.push(selectedCourse);
         localStorage.setItem("savedCourses", JSON.stringify(current));
       }
+
+      setShowLogo(true);
+      setTimeout(() => {
+        setShowLogo(false);
+      }, 2000);
     }
   };
 
@@ -94,7 +103,6 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
           onSubmit={handleNext}
           className="relative overflow-hidden bg-white p-6 rounded-lg shadow-md w-full max-w-md"
         >
-          {/* Progress Bar */}
           <div className="w-full bg-gray-200 rounded-full h-2 mb-4">
             <div
               className="bg-blue-600 h-2 rounded-full transition-all duration-300"
@@ -171,6 +179,26 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
       </div>
     );
   }
+if (showLogo) {
+  return (
+    <motion.div
+      className="h-screen flex items-center justify-center bg-black"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.8 }}
+    >
+      <motion.img
+        src="/aco-foot.png" // <-- replace with your actual logo
+        alt="Welcome"
+        initial={{ scale: 0.7, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ duration: 1, ease: "easeOut" }}
+        className="w-40 h-auto"
+      />
+    </motion.div>
+  );
+}
 
   return (
     <div className="h-full">
