@@ -1,6 +1,8 @@
+import { db } from "@/lib/db";
 import { getDashboardCourses } from "@/actions/get-dashboard-courses";
 import { CoursesList } from "@/components/CoursesList";
 import { auth } from "@clerk/nextjs";
+import { Categories } from "../search/_components/Categories";
 import { redirect } from "next/navigation";
 import { InfoCard } from "./_components/info-card";
 import { CheckCircle, Clock } from "lucide-react";
@@ -13,9 +15,13 @@ export default async function Dashboard() {
     return redirect("/");
   }
 
+    const categories = await db.category.findMany({
+      orderBy: {
+        name: 'asc'
+      }
+    });
+
   const dashboardData = (await getDashboardCourses(userId)) ?? {};
-
-
   const {
     completedCourses = [],      // default to empty array if undefined
     coursesInProgress = [],     // default to empty array if undefined
@@ -36,6 +42,8 @@ export default async function Dashboard() {
           variant="success"
         />
       </div>
+      
+              <Categories items={categories} />
       <CoursesList items={[...coursesInProgress, ...completedCourses]} />
     </div>
   );
