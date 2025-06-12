@@ -136,5 +136,7 @@ model StudentAnswer {
   questionId Int      // ✅ Fixed type
   answer     String
   createdAt  DateTime @default(now())
+  @@unique([studentId, questionId])
+
 }
 
