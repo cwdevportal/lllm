@@ -112,3 +112,29 @@ model StripeCustomer {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+model Question {
+  id       Int      @id @default(autoincrement())
+  question String
+  answer   String
+  options  Option[] // ✅ One-to-many relation
+
+  StudentAnswer StudentAnswer[]
+}
+
+model Option {
+  id         Int      @id @default(autoincrement())
+  text       String
+  question   Question @relation(fields: [questionId], references: [id])
+  questionId Int
+}
+
+model StudentAnswer {
+  id         String   @id @default(cuid())
+  studentId  String
+  question   Question @relation(fields: [questionId], references: [id])
+  questionId Int      // ✅ Fixed type
+  answer     String
+  createdAt  DateTime @default(now())
+}
+

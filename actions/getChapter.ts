@@ -38,17 +38,15 @@ export const getChapter = async ({ userId, courseId, chapterId }: GetChapterProp
       throw new Error("Chapter or course not found");
     }
 
-    let attachments: Attachment[] = [];
     let nextChapter: Chapter | null = null;
+// Remove conditional and fetch attachments directly
+const attachments = await db.attachment.findMany({
+  where: {
+    courseId: courseId,
+  },
+});
 
-    if (purchase) {
-      attachments = await db.attachment.findMany({
-        where: {
-          courseId: courseId,
-        },
-      });
-    }
-
+ 
     if (chapter.isFree || purchase) {
       nextChapter = await db.chapter.findFirst({
         where: {

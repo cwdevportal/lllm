@@ -1,5 +1,5 @@
 "use client"
-import { BarChart, Compass, Layout, List } from 'lucide-react'
+import { BarChart, FileText, Compass, Layout, List } from 'lucide-react'
 import { SidebarItem } from './SidebarItem';
 import { usePathname } from 'next/navigation';
 
@@ -14,6 +14,12 @@ const guestRoutes = [
         label:"Courses",
         href:"/search"
     },
+    {
+      icon: FileText,
+      label: "Exams",
+      href: "/exam"
+
+    }
 ]
 
 const teacherRoutes = [
