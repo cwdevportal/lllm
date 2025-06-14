@@ -63,31 +63,54 @@ export function DataTable<TData, TValue>({
     router.push("/teacher/create")
   }
 
-  return (
-    <div>
-      <div className="flex items-center py-4 justify-between">
-        <Input
-          placeholder="Filter courses..."
-          value={(table.getColumn("title")?.getFilterValue() as string) ?? ""}
-          onChange={(event) =>
-            table.getColumn("title")?.setFilterValue(event.target.value)
-          }
-          className="max-w-sm"
-        />
-        <Button onClick={handleNewCourse} disabled={loading}>
-          {loading ? (
-            <>
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              Loading...
-            </>
-          ) : (
-            <>
-              <PlusCircle className="h-4 w-4 mr-2" />
-              New Course
-            </>
-          )}
-        </Button>
-      </div>
+ return (
+  <div>
+    <div className="flex items-center py-4 justify-between gap-2 flex-wrap">
+      <Input
+        placeholder="Filter courses..."
+        value={(table.getColumn("title")?.getFilterValue() as string) ?? ""}
+        onChange={(event) =>
+          table.getColumn("title")?.setFilterValue(event.target.value)
+        }
+        className="max-w-sm"
+      />
+
+      {/* First button: leads to /teacher/create */}
+      <Button onClick={handleNewCourse} disabled={loading}>
+        {loading ? (
+          <>
+            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            Loading...
+          </>
+        ) : (
+          <>
+            <PlusCircle className="h-4 w-4 mr-2" />
+            New Course
+          </>
+        )}
+      </Button>
+
+      {/* Second button: leads to /questions */}
+     <Button
+  onClick={() => router.push("/questions")}
+  disabled={loading}
+  className="bg-green-600 text-white hover:bg-green-700"
+>
+  {loading ? (
+    <>
+      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+      Loading...
+    </>
+  ) : (
+    <>
+      <PlusCircle className="h-4 w-4 mr-2" />
+       Set Exam
+      Questions
+    </>
+  )}
+</Button>
+
+    </div>
 
       <div className="rounded-md border">
         <Table>

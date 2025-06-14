@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE `User` MODIFY `isTeacher` BOOLEAN NOT NULL DEFAULT false,
+    MODIFY `isAdmin` BOOLEAN NOT NULL DEFAULT false;

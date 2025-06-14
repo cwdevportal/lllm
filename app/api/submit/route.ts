@@ -1,27 +1,47 @@
-import { NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
+import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
 
 export async function POST(req: Request) {
-  const body = await req.json()
-  const { studentId, answers } = body
+  const body = await req.json();
+
+  const {
+    studentId,
+    answers,
+  }: {
+    studentId: string;
+    answers: { questionId: string | number; selected: string }[];
+  } = body;
+
+  if (!studentId || !Array.isArray(answers)) {
+    return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
+  }
+
+  const filteredAnswers = answers.filter(
+    (entry) => entry.questionId && entry.selected
+  );
+
+  console.log("Received payload:", body);
+
 
   const formattedAnswers = await Promise.all(
-    answers.map(async (entry: { questionId: number; selected: string }) => {
-      const correct = await prisma.question.findUnique({
-        where: { id: entry.questionId },
-        select: { answer: true }
-      })
+  filteredAnswers.map(async (entry) => {
+    const questionId = String(entry.questionId); // 🔥 force it to string
 
-      return {
-        studentId,
-        questionId: entry.questionId,
-        selected: entry.selected,
-        correctAnswer: correct?.answer || '',
-      }
-    })
-  )
+    const correct = await prisma.question.findUnique({
+      where: { id: questionId },
+      select: { answer: true },
+    });
 
-  // Save or update answers
+    return {
+      studentId: String(studentId),
+      questionId,
+      selected: entry.selected,
+      correctAnswer: correct?.answer ?? '',
+    };
+  })
+);
+
+
   for (const ans of formattedAnswers) {
     await prisma.studentAnswer.upsert({
       where: {
@@ -38,16 +58,21 @@ export async function POST(req: Request) {
         questionId: ans.questionId,
         answer: ans.selected,
       },
-    })
+    });
   }
+console.log("Formatted Answers:", formattedAnswers);
 
-  // Compute score
-  const score = formattedAnswers.filter(ans => ans.selected === ans.correctAnswer).length
-  const total = formattedAnswers.length
+  const score = formattedAnswers.filter(
+    (ans) =>
+      ans.selected.trim().toLowerCase() ===
+      ans.correctAnswer.trim().toLowerCase()
+  ).length;
+
+  const total = await prisma.question.count(); // ✅ Use total questions in DB
 
   return NextResponse.json({
     message: 'Answers submitted successfully',
     score,
     total,
-  })
+  });
 }

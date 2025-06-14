@@ -4,7 +4,7 @@ import './globals.css'
 import { ClerkProvider } from '@clerk/nextjs'
 import { ToasterProvider } from '@/components/providers/toaster-provider'
 import { ConfettiProvider } from '@/components/providers/ConfettiProvider'
-import { Toaster } from 'react-hot-toast'
+
 
 const inter = Inter({ subsets: ['latin'] })
 

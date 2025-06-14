@@ -24,6 +24,9 @@ interface Feedback {
   isCorrect: boolean
 }
 
+const shuffle = <T,>(arr: T[]): T[] =>
+  [...arr].sort(() => Math.random() - 0.5)
+
 const ExamPage = () => {
   const [questions, setQuestions] = useState<Question[]>([])
   const [answers, setAnswers] = useState<Record<number, string>>({})
@@ -36,8 +39,17 @@ const ExamPage = () => {
     const fetchQuestions = async () => {
       try {
         const res = await fetch('/api/questions')
-        const data = await res.json()
-        setQuestions(data)
+        const data: Question[] = await res.json()
+
+        // ✅ Shuffle questions and their options
+        const randomized = shuffle(
+          data.map(q => ({
+            ...q,
+            options: shuffle(q.options),
+          }))
+        )
+
+        setQuestions(randomized)
       } catch (error) {
         console.error('Failed to fetch questions:', error)
         toast.error('❌ Failed to load questions')
@@ -54,13 +66,21 @@ const ExamPage = () => {
 
   const handleSubmit = async () => {
     if (isSubmitting) return
+
+    // ✅ Prevent if any question is unanswered
+    const unanswered = questions.find(q => !answers[q.id])
+    if (unanswered) {
+      toast.error('❌ Please answer all questions before submitting.')
+      return
+    }
+
     setIsSubmitting(true)
 
     const studentId = 'student-001' // Replace with real session logic
-    const formatted = Object.entries(answers).map(([qid, selected]) => ({
-      questionId: parseInt(qid),
-      selected,
-    }))
+  const formatted = Object.entries(answers).map(([qid, selected]) => ({
+  questionId: qid, // ✅ keep UUID as string
+  selected,
+}))
 
     try {
       const res = await axios.post('/api/submit', {
@@ -72,13 +92,26 @@ const ExamPage = () => {
       toast.success(`✅ You scored ${score} out of ${total}`)
       setSubmitted(true)
 
-      // Build feedback
-      const feedbackData = questions.map(q => ({
-        questionId: q.id,
-        correctAnswer: q.answer,
-        isCorrect: q.answer === answers[q.id],
-      }))
+console.log("Score:", score, "Total Questions:", total);
+
+
+      const feedbackData = questions.map(q => {
+        const selectedAnswer = answers[q.id] || ''
+        return {
+          questionId: q.id,
+          correctAnswer: q.answer,
+          isCorrect:
+            q.answer.trim().toLowerCase() === selectedAnswer.trim().toLowerCase(),
+        }
+      })
+
       setFeedback(feedbackData)
+
+      // ✅ Save feedback in DB
+      await axios.post('/api/save-feedback', {
+        studentId,
+        feedback: feedbackData,
+      })
     } catch (error) {
       console.error('Submission failed:', error)
       toast.error('❌ Failed to submit answers')

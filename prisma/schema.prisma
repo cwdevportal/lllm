@@ -11,7 +11,8 @@ generator client {
 
 model Course {
   id String @id @default(uuid())
-  userId String
+
+    userId  String? // 👈 now it's optional
   title String @db.Text
   description String? @db.Text
   imageUrl String? @db.Text
@@ -113,30 +114,54 @@ model StripeCustomer {
   updatedAt DateTime @updatedAt
 }
 
-model Question {
-  id       Int      @id @default(autoincrement())
-  question String
-  answer   String
-  options  Option[] // ✅ One-to-many relation
 
-  StudentAnswer StudentAnswer[]
-}
 
 model Option {
-  id         Int      @id @default(autoincrement())
+  id         String   @id @default(uuid())
   text       String
-  question   Question @relation(fields: [questionId], references: [id])
-  questionId Int
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  questionId String
 }
+
+
+
+
 
 model StudentAnswer {
   id         String   @id @default(cuid())
   studentId  String
+  questionId String
   question   Question @relation(fields: [questionId], references: [id])
-  questionId Int      // ✅ Fixed type
   answer     String
+  isCorrect  Boolean? // ← Make it optional for now
   createdAt  DateTime @default(now())
-  @@unique([studentId, questionId])
 
+  @@unique([studentId, questionId])
+  @@index([questionId])
 }
+
+model Question {
+  id        String   @id @default(uuid())
+  question  String
+  answer    String
+  createdAt DateTime @default(now()) // ✅ must be here
+  updatedAt DateTime?                // optional if you're using it
+
+  options   Option[]
+
+  
+
+  StudentAnswer StudentAnswer[]
+}
+
+model Feedback {
+  id            Int      @id @default(autoincrement())
+  studentId     String
+  questionId    Int
+  correctAnswer String
+  isCorrect     Boolean
+  createdAt     DateTime @default(now())
+}
+
+
 
