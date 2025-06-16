@@ -11,7 +11,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Invalid input' }, { status: 400 });
     }
 
-    console.log(JSON.stringify(question, null, 2));
 
 
     const created = await db.question.create({
@@ -40,7 +39,6 @@ export async function GET() {
       orderBy: { createdAt: 'desc' }, // optional: show latest first
     });
 
-    console.log(JSON.stringify(questions, null, 2));
 
 
     return NextResponse.json(questions);

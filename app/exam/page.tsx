@@ -92,7 +92,6 @@ const ExamPage = () => {
       toast.success(`✅ You scored ${score} out of ${total}`)
       setSubmitted(true)
 
-console.log("Score:", score, "Total Questions:", total);
 
 
       const feedbackData = questions.map(q => {

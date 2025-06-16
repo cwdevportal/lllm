@@ -20,7 +20,6 @@ export async function POST(req: Request) {
     (entry) => entry.questionId && entry.selected
   );
 
-  console.log("Received payload:", body);
 
 
   const formattedAnswers = await Promise.all(
@@ -60,7 +59,6 @@ export async function POST(req: Request) {
       },
     });
   }
-console.log("Formatted Answers:", formattedAnswers);
 
   const score = formattedAnswers.filter(
     (ans) =>

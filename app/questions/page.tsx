@@ -1,8 +1,9 @@
-// app/questions/page.tsx
 'use client';
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@clerk/nextjs';
 
 interface Option {
   id: string;
@@ -15,15 +16,25 @@ interface Question {
   answer: string;
   options: Option[];
   createdAt: string;
-  // updatedAt?: string;
 }
 
 export default function QuestionsPage() {
+  const { userId } = useAuth();
+  const router = useRouter();
+
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch list
+  // ✅ Check teacher status from localStorage and redirect if not
+  useEffect(() => {
+    const isTeacher = localStorage.getItem(`teacher-status-${userId}`);
+    if (isTeacher !== 'true') {
+      router.push('/');
+    }
+  }, [userId, router]);
+
+  // ✅ Fetch questions
   useEffect(() => {
     const fetchQuestions = async () => {
       try {
@@ -45,7 +56,6 @@ export default function QuestionsPage() {
     fetchQuestions();
   }, []);
 
-  // Delete handler
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this question?')) return;
     try {
@@ -56,7 +66,6 @@ export default function QuestionsPage() {
       if (!res.ok) {
         alert(data.error || 'Failed to delete');
       } else {
-        // Remove from local state
         setQuestions((prev) => prev.filter((q) => q.id !== id));
       }
     } catch (err) {
