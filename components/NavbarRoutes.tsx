@@ -1,7 +1,7 @@
 'use client'
 
 import { UserButton, useAuth } from '@clerk/nextjs'
-import { usePathname, useRouter } from 'next/navigation'
+import { usePathname } from 'next/navigation'
 import React, { useEffect, useState } from 'react'
 import { Button } from './ui/button'
 import { LogOut, Loader2 } from 'lucide-react'
@@ -12,48 +12,35 @@ import { isTeacher as checkIsTeacher } from '@/lib/teacher'
 export const NavbarRoutes = () => {
   const { userId } = useAuth()
   const pathname = usePathname()
-  const router = useRouter()
 
   const isTeacherPage = pathname?.startsWith('/teacher')
   const isPlayerPage = pathname?.includes('/courses')
   const isSearchPage = pathname === '/search'
 
+  const [loading, setLoading] = useState(false)
   const [isTeacherUser, setIsTeacherUser] = useState(false)
-  const [checkingTeacher, setCheckingTeacher] = useState(false)
 
-  // Preload teacher status (optional: can be removed if you only want to check on click)
   useEffect(() => {
-    if (!userId) return
-    const cacheKey = `teacher-status-${userId}`
-    const cachedValue = localStorage.getItem(cacheKey)
-    if (cachedValue !== null) {
-      setIsTeacherUser(cachedValue === 'true')
+    const checkTeacher = async () => {
+      if (!userId) return
+
+      const cacheKey = `teacher-status-${userId}`
+      const cachedValue = localStorage.getItem(cacheKey)
+
+      if (cachedValue !== null) {
+        setIsTeacherUser(cachedValue === 'true')
+        return
+      }
+
+      setLoading(true)
+      const result = await checkIsTeacher(userId)
+      localStorage.setItem(cacheKey, result.toString())
+      setIsTeacherUser(result)
+      setLoading(false)
     }
+
+    checkTeacher()
   }, [userId])
-
-  const handleTeacherClick = async () => {
-    if (!userId) return
-    setCheckingTeacher(true)
-
-    const cacheKey = `teacher-status-${userId}`
-    const cachedValue = localStorage.getItem(cacheKey)
-
-    let isTeacher = false
-    if (cachedValue !== null) {
-      isTeacher = cachedValue === 'true'
-    } else {
-      isTeacher = await checkIsTeacher(userId)
-      localStorage.setItem(cacheKey, isTeacher.toString())
-    }
-
-    setCheckingTeacher(false)
-
-    if (isTeacher) {
-      router.push('/teacher/courses')
-    } else {
-      alert('You are not authorized as a teacher.')
-    }
-  }
 
   return (
     <>
@@ -70,18 +57,18 @@ export const NavbarRoutes = () => {
               Exit
             </Button>
           </Link>
-        ) : (
-          <Button size="sm" variant="ghost" onClick={handleTeacherClick} disabled={checkingTeacher}>
-            {checkingTeacher ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Checking...
-              </>
-            ) : (
-              'Teacher mode'
-            )}
+        ) : loading ? (
+          <Button size="sm" variant="ghost" disabled>
+            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            Loading
           </Button>
-        )}
+        ) : isTeacherUser ? (
+          <Link href="/teacher/courses">
+            <Button size="sm" variant="ghost">
+              Teacher mode
+            </Button>
+          </Link>
+        ) : null}
         <UserButton afterSignOutUrl="/" />
       </div>
     </>
