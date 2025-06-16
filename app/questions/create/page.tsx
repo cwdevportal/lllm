@@ -1,4 +1,3 @@
-// app/questions/create/page.tsx
 'use client';
 
 import { useState } from 'react';
@@ -30,7 +29,6 @@ export default function CreateQuestionPage() {
       if (!res.ok) {
         alert(data.error || 'Failed to create question');
       } else {
-        // Redirect back to list
         router.push('/questions');
       }
     } catch (err) {
@@ -43,6 +41,16 @@ export default function CreateQuestionPage() {
 
   return (
     <div className="max-w-xl mx-auto p-6">
+      <div className="mb-4">
+        <button
+          type="button"
+          onClick={() => router.back()}
+          className="text-blue-600 hover:underline"
+        >
+          ← Go Back
+        </button>
+      </div>
+
       <h1 className="text-2xl font-bold mb-4">Create New Question</h1>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
@@ -78,7 +86,6 @@ export default function CreateQuestionPage() {
               className="w-full border rounded px-3 py-2 mb-2"
             />
           ))}
-          {/* Optionally: Add button to add more options dynamically */}
         </div>
         <button
           type="submit"
