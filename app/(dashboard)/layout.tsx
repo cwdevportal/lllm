@@ -69,6 +69,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
         progress: 0,
         category: { name: "Self-Enrolled" },
       };
+      console.log(formData.course)
 
       const current = JSON.parse(localStorage.getItem("savedCourses") || "[]");
 
@@ -145,6 +146,8 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
                   <option value="Backend Development">Backend Development</option>
                   <option value="UI/UX Design">UI/UX Design</option>
                   <option value="Mobile App Dev">Mobile App Development</option>
+                  
+                  <option value="software developemnt">software developemnt</option>
                 </select>
               ) : (
                 <input
