@@ -37,6 +37,8 @@ const ExamPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [feedback, setFeedback] = useState<Feedback[]>([])
   const [currentPage, setCurrentPage] = useState(0)
+  const [timeLeft, setTimeLeft] = useState(45 * 60)
+  const [autosaveTime, setAutosaveTime] = useState<Date | null>(null)
 
   const currentQuestion = questions[currentPage]
   const answeredCount = Object.keys(answers).length
@@ -61,6 +63,12 @@ const ExamPage = () => {
       setFeedback([])
       setSubmitted(false)
       setCurrentPage(0)
+      setTimeLeft(45 * 60)
+
+      const savedAnswers = localStorage.getItem('exam-answers')
+      const savedPage = localStorage.getItem('exam-page')
+      if (savedAnswers) setAnswers(JSON.parse(savedAnswers))
+      if (savedPage) setCurrentPage(Number(savedPage))
     } catch (error) {
       console.error('Failed to fetch questions:', error)
       toast.error('❌ Failed to load questions')
@@ -73,12 +81,44 @@ const ExamPage = () => {
     fetchQuestions()
   }, [])
 
+  useEffect(() => {
+    if (submitted) return
+
+    const interval = setInterval(() => {
+      setTimeLeft(prev => {
+        if (prev <= 1) {
+          clearInterval(interval)
+          handleSubmit()
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
+
+    return () => clearInterval(interval)
+  }, [questions, submitted])
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      localStorage.setItem('exam-answers', JSON.stringify(answers))
+      localStorage.setItem('exam-page', currentPage.toString())
+      setAutosaveTime(new Date())
+    }, 10000)
+    return () => clearInterval(interval)
+  }, [answers, currentPage])
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60).toString().padStart(2, '0')
+    const secs = (seconds % 60).toString().padStart(2, '0')
+    return `${mins}:${secs}`
+  }
+
   const handleOptionChange = (qid: number, selected: string) => {
     setAnswers(prev => ({ ...prev, [qid]: selected }))
   }
 
   const handleSubmit = async () => {
-    if (isSubmitting) return
+    if (isSubmitting || submitted) return
     const unanswered = questions.find(q => !answers[q.id])
     if (unanswered) {
       toast.error('❌ Please answer all questions before submitting.')
@@ -88,12 +128,12 @@ const ExamPage = () => {
     setIsSubmitting(true)
     const studentId = 'student-001'
     const formatted = Object.entries(answers).map(([qid, selected]) => ({
-      questionId: qid,
+      questionId: Number(qid),
       selected,
     }))
 
     try {
-      const res = await axios.post('/api/submit', {
+      await axios.post('/api/submit', {
         studentId,
         answers: formatted,
       })
@@ -115,7 +155,6 @@ const ExamPage = () => {
 
       toast.success(`🎉 You scored ${percent}%`)
 
-      // Save feedback in DB
       await axios.post('/api/save-feedback', {
         studentId,
         feedback: feedbackData,
@@ -131,6 +170,8 @@ const ExamPage = () => {
   }
 
   const handleRetake = () => {
+    localStorage.removeItem('exam-answers')
+    localStorage.removeItem('exam-page')
     toast.success('🔁 Restarting exam...')
     fetchQuestions()
   }
@@ -143,7 +184,36 @@ const ExamPage = () => {
     if (currentPage > 0) setCurrentPage(currentPage - 1)
   }
 
-  if (loading) return <div className="p-4">Loading exam...</div>
+  if (loading) {
+    return (
+      <div className="p-4 text-lg font-medium">
+        Loading exam
+        <span className="dots ml-1" />
+        <style jsx>{`
+          .dots::after {
+            display: inline-block;
+            animation: dots 1.5s steps(3, end) infinite;
+            content: '...';
+          }
+
+          @keyframes dots {
+            0% {
+              content: '';
+            }
+            33% {
+              content: '.';
+            }
+            66% {
+              content: '..';
+            }
+            100% {
+              content: '...';
+            }
+          }
+        `}</style>
+      </div>
+    )
+  }
 
   const correctCount = feedback.filter(f => f.isCorrect).length
   const percent = Math.round((correctCount / totalQuestions) * 100)
@@ -153,7 +223,17 @@ const ExamPage = () => {
     <div className="max-w-4xl mx-auto py-8 px-4">
       <h1 className="text-3xl font-bold mb-4">📝 Student Exam</h1>
 
-      {/* Progress Bar */}
+      <div className="flex justify-between items-center mb-4">
+        <div className="text-lg font-semibold text-red-600">
+          ⏳ Time Left: {formatTime(timeLeft)}
+        </div>
+        {autosaveTime && (
+          <div className="text-sm text-gray-600">
+            Last autosaved: {autosaveTime.toLocaleTimeString()}
+          </div>
+        )}
+      </div>
+
       {!submitted && (
         <div className="w-full bg-gray-200 rounded-full h-4 mb-4">
           <div
@@ -163,7 +243,6 @@ const ExamPage = () => {
         </div>
       )}
 
-      {/* Question */}
       {currentQuestion && (
         <div className="mb-6 border-b pb-4">
           <h2 className="text-lg font-semibold">
@@ -203,12 +282,19 @@ const ExamPage = () => {
         </div>
       )}
 
-      {/* Navigation */}
       <div className="flex justify-between mt-4 gap-4">
         <Button onClick={handlePrev} disabled={currentPage === 0}>
           ← Previous
         </Button>
-        <Button onClick={() => router.push('/')}>🏠 Back to Home</Button>
+        <Button
+          onClick={() => {
+            localStorage.removeItem('exam-answers')
+            localStorage.removeItem('exam-page')
+            router.push('/')
+          }}
+        >
+          🏠 Back to Home
+        </Button>
         <Button
           onClick={handleNext}
           disabled={currentPage === totalQuestions - 1}
@@ -217,18 +303,16 @@ const ExamPage = () => {
         </Button>
       </div>
 
-      {/* Submit */}
       {!submitted && currentPage === totalQuestions - 1 && (
         <Button
           onClick={handleSubmit}
           disabled={isSubmitting}
-          className="mt-6 w-full"
+          className="mt-6 w-1/3 mx-auto block"
         >
           {isSubmitting ? 'Submitting...' : '✅ Submit Exam'}
         </Button>
       )}
 
-      {/* Summary */}
       {submitted && (
         <div className="mt-8 text-center">
           <p className="text-xl font-semibold">
@@ -238,11 +322,29 @@ const ExamPage = () => {
             </span>
           </p>
 
-          {!passed && (
-            <Button onClick={handleRetake} className="mt-4">
-              🔁 Retake Exam
-            </Button>
-          )}
+          <Button onClick={handleRetake} className="mt-4">
+            🔁 Retake Exam
+          </Button>
+
+          <div className="mt-6 text-left">
+            <h3 className="text-lg font-bold mb-2">📋 Answer Review</h3>
+            {questions.map(q => {
+              const userAnswer = answers[q.id]
+              const isCorrect =
+                q.answer.trim().toLowerCase() === userAnswer?.trim().toLowerCase()
+              return (
+                <div key={q.id} className="mb-4">
+                  <p className="font-medium">{q.question}</p>
+                  <p>
+                    Your answer: {userAnswer || 'N/A'}{' '}
+                    <span className={isCorrect ? 'text-green-600' : 'text-red-600'}>
+                      ({isCorrect ? 'Correct' : `Wrong. Correct: ${q.answer}`})
+                    </span>
+                  </p>
+                </div>
+              )
+            })}
+          </div>
         </div>
       )}
     </div>

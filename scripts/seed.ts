@@ -8,7 +8,7 @@ async function main() {
       data: [
         { name: 'Beginner Level' },
         { name: 'Intermediate Level' },
-        { name: 'Tutor Level' },
+        { name: 'Advanced Level' },
       ],
       skipDuplicates: true,
     });
