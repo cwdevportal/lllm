@@ -7,20 +7,20 @@ import toast from 'react-hot-toast'
 import { useRouter } from 'next/navigation'
 
 interface Option {
-  id: number
+  id: string
   text: string
-  questionId: number
+  questionId: string
 }
 
 interface Question {
-  id: number
+  id: string
   question: string
   answer: string
   options: Option[]
 }
 
 interface Feedback {
-  questionId: number
+  questionId: string
   correctAnswer: string
   isCorrect: boolean
 }
@@ -31,7 +31,7 @@ const ExamPage = () => {
   const router = useRouter()
 
   const [questions, setQuestions] = useState<Question[]>([])
-  const [answers, setAnswers] = useState<Record<number, string>>({})
+  const [answers, setAnswers] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
   const [submitted, setSubmitted] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -48,27 +48,34 @@ const ExamPage = () => {
   const fetchQuestions = async () => {
     setLoading(true)
     try {
-      const res = await fetch('/api/questions')
-      const data: Question[] = await res.json()
-
-      const randomized = shuffle(
-        data.map(q => ({
-          ...q,
-          options: shuffle(q.options),
-        }))
-      )
-
-      setQuestions(randomized)
-      setAnswers({})
-      setFeedback([])
-      setSubmitted(false)
-      setCurrentPage(0)
-      setTimeLeft(45 * 60)
-
+      const savedQuestions = localStorage.getItem('exam-questions')
       const savedAnswers = localStorage.getItem('exam-answers')
       const savedPage = localStorage.getItem('exam-page')
+      const savedTime = localStorage.getItem('exam-timeLeft')
+      const savedSubmitted = localStorage.getItem('exam-submitted')
+      const savedFeedback = localStorage.getItem('exam-feedback')
+
+      let questionData: Question[] = []
+
+      if (savedQuestions) {
+        questionData = JSON.parse(savedQuestions)
+      } else {
+        const res = await fetch('/api/questions')
+        const data: Question[] = await res.json()
+        questionData = shuffle(data.map(q => ({
+          ...q,
+          options: shuffle(q.options),
+        })))
+        localStorage.setItem('exam-questions', JSON.stringify(questionData))
+      }
+
+      setQuestions(questionData)
+
       if (savedAnswers) setAnswers(JSON.parse(savedAnswers))
       if (savedPage) setCurrentPage(Number(savedPage))
+      if (savedTime) setTimeLeft(Number(savedTime))
+      if (savedSubmitted) setSubmitted(savedSubmitted === 'true')
+      if (savedFeedback) setFeedback(JSON.parse(savedFeedback))
     } catch (error) {
       console.error('Failed to fetch questions:', error)
       toast.error('❌ Failed to load questions')
@@ -96,16 +103,19 @@ const ExamPage = () => {
     }, 1000)
 
     return () => clearInterval(interval)
-  }, [questions, submitted])
+  }, [submitted])
 
   useEffect(() => {
     const interval = setInterval(() => {
       localStorage.setItem('exam-answers', JSON.stringify(answers))
       localStorage.setItem('exam-page', currentPage.toString())
+      localStorage.setItem('exam-timeLeft', timeLeft.toString())
+      localStorage.setItem('exam-submitted', submitted.toString())
+      localStorage.setItem('exam-feedback', JSON.stringify(feedback))
       setAutosaveTime(new Date())
     }, 10000)
     return () => clearInterval(interval)
-  }, [answers, currentPage])
+  }, [answers, currentPage, timeLeft, submitted, feedback])
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60).toString().padStart(2, '0')
@@ -113,7 +123,7 @@ const ExamPage = () => {
     return `${mins}:${secs}`
   }
 
-  const handleOptionChange = (qid: number, selected: string) => {
+  const handleOptionChange = (qid: string, selected: string) => {
     setAnswers(prev => ({ ...prev, [qid]: selected }))
   }
 
@@ -127,15 +137,14 @@ const ExamPage = () => {
 
     setIsSubmitting(true)
     const studentId = 'student-001'
-    const formatted = Object.entries(answers).map(([qid, selected]) => ({
-      questionId: Number(qid),
-      selected,
-    }))
 
     try {
       await axios.post('/api/submit', {
         studentId,
-        answers: formatted,
+        answers: Object.entries(answers).map(([qid, selected]) => ({
+          questionId: qid,
+          selected,
+        })),
       })
 
       const feedbackData = questions.map(q => {
@@ -149,18 +158,19 @@ const ExamPage = () => {
       })
 
       setFeedback(feedbackData)
+      setSubmitted(true)
+
+      localStorage.setItem('exam-feedback', JSON.stringify(feedbackData))
+      localStorage.setItem('exam-submitted', 'true')
 
       const score = feedbackData.filter(f => f.isCorrect).length
       const percent = Math.round((score / totalQuestions) * 100)
-
       toast.success(`🎉 You scored ${percent}%`)
 
       await axios.post('/api/save-feedback', {
         studentId,
         feedback: feedbackData,
       })
-
-      setSubmitted(true)
     } catch (error) {
       console.error('Submission failed:', error)
       toast.error('❌ Failed to submit answers')
@@ -172,6 +182,10 @@ const ExamPage = () => {
   const handleRetake = () => {
     localStorage.removeItem('exam-answers')
     localStorage.removeItem('exam-page')
+    localStorage.removeItem('exam-timeLeft')
+    localStorage.removeItem('exam-submitted')
+    localStorage.removeItem('exam-feedback')
+    localStorage.removeItem('exam-questions')
     toast.success('🔁 Restarting exam...')
     fetchQuestions()
   }
@@ -187,28 +201,18 @@ const ExamPage = () => {
   if (loading) {
     return (
       <div className="p-4 text-lg font-medium">
-        Loading exam
-        <span className="dots ml-1" />
+        Loading exam<span className="dots ml-1" />
         <style jsx>{`
           .dots::after {
             display: inline-block;
             animation: dots 1.5s steps(3, end) infinite;
             content: '...';
           }
-
           @keyframes dots {
-            0% {
-              content: '';
-            }
-            33% {
-              content: '.';
-            }
-            66% {
-              content: '..';
-            }
-            100% {
-              content: '...';
-            }
+            0% { content: ''; }
+            33% { content: '.'; }
+            66% { content: '..'; }
+            100% { content: '...'; }
           }
         `}</style>
       </div>
@@ -283,24 +287,16 @@ const ExamPage = () => {
       )}
 
       <div className="flex justify-between mt-4 gap-4">
-        <Button onClick={handlePrev} disabled={currentPage === 0}>
-          ← Previous
-        </Button>
+        <Button onClick={handlePrev} disabled={currentPage === 0}>← Previous</Button>
         <Button
           onClick={() => {
-            localStorage.removeItem('exam-answers')
-            localStorage.removeItem('exam-page')
+            
             router.push('/')
           }}
         >
           🏠 Back to Home
         </Button>
-        <Button
-          onClick={handleNext}
-          disabled={currentPage === totalQuestions - 1}
-        >
-          Next →
-        </Button>
+        <Button onClick={handleNext} disabled={currentPage === totalQuestions - 1}>Next →</Button>
       </div>
 
       {!submitted && currentPage === totalQuestions - 1 && (
@@ -330,8 +326,7 @@ const ExamPage = () => {
             <h3 className="text-lg font-bold mb-2">📋 Answer Review</h3>
             {questions.map(q => {
               const userAnswer = answers[q.id]
-              const isCorrect =
-                q.answer.trim().toLowerCase() === userAnswer?.trim().toLowerCase()
+              const isCorrect = q.answer.trim().toLowerCase() === userAnswer?.trim().toLowerCase()
               return (
                 <div key={q.id} className="mb-4">
                   <p className="font-medium">{q.question}</p>

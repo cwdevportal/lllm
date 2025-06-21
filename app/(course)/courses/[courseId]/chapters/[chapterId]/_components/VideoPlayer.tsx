@@ -8,6 +8,7 @@ import { Loader2, Lock } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { useConfettiSrore } from "@/hooks/use-confetti-store";
+import { Button } from "@/components/ui/button"; // Ensure you have this
 
 interface VideoPlayerProps {
   courseId: string;
@@ -31,13 +32,17 @@ export const VideoPlayer = ({
   youtubeUrl = "https://www.youtube.com/watch?v=zomiRD6ZQfo",
 }: VideoPlayerProps) => {
   const [isReady, setIsReady] = useState(false);
+  const [completed, setCompleted] = useState(false);
   const router = useRouter();
   const confetti = useConfettiSrore();
   const playerRef = useRef<HTMLIFrameElement>(null);
 
   const actualVideoUrl = videoUrl || youtubeUrl;
 
-
+  const getGoogleDriveId = (url: string) => {
+    const match = url.match(/\/file\/d\/(.*?)(\/|$)/);
+    return match ? match[1] : null;
+  };
 
   const getYouTubeVideoId = (url: string) => {
     const regExp = /^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
@@ -45,25 +50,26 @@ export const VideoPlayer = ({
     return match && match[2].length === 11 ? match[2] : null;
   };
 
+  const driveId = actualVideoUrl ? getGoogleDriveId(actualVideoUrl) : null;
   const videoId = actualVideoUrl ? getYouTubeVideoId(actualVideoUrl) : null;
 
   const onEnd = useCallback(async () => {
     try {
-      if (true /* forced true for testing */) {
-        await axios.put(`/api/courses/${courseId}/chapters/${chapterId}/progress`, {
-          isCompleted: true,
-        });
+      await axios.put(`/api/courses/${courseId}/chapters/${chapterId}/progress`, {
+        isCompleted: true,
+      });
 
-        if (!nextChapterId) {
-          confetti.onOpen();
-        }
+      setCompleted(true);
 
-        toast.success("Progress updated");
-        router.refresh();
+      if (!nextChapterId) {
+        confetti.onOpen();
+      }
 
-        if (nextChapterId) {
-          router.push(`/courses/${courseId}/chapters/${nextChapterId}`);
-        }
+      toast.success("Progress updated");
+      router.refresh();
+
+      if (nextChapterId) {
+        router.push(`/courses/${courseId}/chapters/${nextChapterId}`);
       }
     } catch (err) {
       console.error("Error in onEnd:", err);
@@ -72,7 +78,7 @@ export const VideoPlayer = ({
   }, [courseId, chapterId, nextChapterId, router, confetti]);
 
   useEffect(() => {
-    if (!videoId || isLocked) return;
+    if (!videoId || isLocked || driveId) return;
 
     let player: YT.Player;
 
@@ -82,7 +88,9 @@ export const VideoPlayer = ({
           onReady: () => setIsReady(true),
           onStateChange: (event: YT.OnStateChangeEvent) => {
             if (event.data === window.YT.PlayerState.ENDED) {
-              onEnd();
+              if (completeOnEnd) {
+                onEnd();
+              }
             }
           },
         },
@@ -104,34 +112,55 @@ export const VideoPlayer = ({
         player.destroy();
       }
     };
-  }, [videoId, onEnd, isLocked]);
+  }, [videoId, onEnd, isLocked, driveId, completeOnEnd]);
 
-  if (!videoId) return <p>Invalid YouTube URL</p>;
+  if (!videoId && !driveId) return <p>Invalid video URL</p>;
 
   return (
-    <div className="relative aspect-video">
-      {!isReady && !isLocked && (
-        <div className="absolute inset-0 flex items-center justify-center bg-slate-800">
+    <div className="relative aspect-video space-y-4">
+      {!isReady && !isLocked && !driveId && (
+        <div className="absolute inset-0 flex items-center justify-center bg-slate-800 z-10">
           <Loader2 className="w-4 h-4 animate-spin text-secondary" />
         </div>
       )}
+
       {isLocked && (
-        <div className="absolute inset-0 flex items-center justify-center bg-slate-800 flex-col gap-y-2 text-secondary">
+        <div className="absolute inset-0 flex items-center justify-center bg-slate-800 flex-col gap-y-2 text-secondary z-10">
           <Lock className="h-8 w-8" />
           <p className="text-sm">This chapter is locked</p>
         </div>
       )}
+
       {!isLocked && (
-        <iframe
-          ref={playerRef}
-          title={title}
-          className={cn(!isReady && "hidden")}
-          width="100%"
-          height="100%"
-          src={`https://www.youtube.com/embed/${videoId}?enablejsapi=1&autoplay=1&controls=1`}
-          allow="autoplay; encrypted-media"
-          allowFullScreen
-        />
+        <>
+          {driveId ? (
+            <iframe
+              title={title}
+              className="w-full h-full"
+              src={`https://drive.google.com/file/d/${driveId}/preview`}
+              allow="autoplay; encrypted-media"
+              allowFullScreen
+            />
+          ) : (
+            <iframe
+              ref={playerRef}
+              title={title}
+              className={cn("w-full h-full", !isReady && "hidden")}
+              src={`https://www.youtube.com/embed/${videoId}?enablejsapi=1&autoplay=1&controls=1`}
+              allow="autoplay; encrypted-media"
+              allowFullScreen
+            />
+          )}
+        </>
+      )}
+
+      {/* Fallback Mark Complete Button for Google Drive */}
+      {!isLocked && driveId && !completed && (
+        <div className="pt-4">
+          <Button onClick={onEnd} className="w-full">
+            Mark as complete
+          </Button>
+        </div>
       )}
     </div>
   );

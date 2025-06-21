@@ -37,6 +37,8 @@ model Category {
   id String @id @default(uuid())
   name String @unique
   courses Course[]
+  
+  order Int?   // <-- make it optional for now
 }
 
 model Attachment {

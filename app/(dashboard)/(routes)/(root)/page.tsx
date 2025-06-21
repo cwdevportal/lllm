@@ -15,11 +15,12 @@ export default async function Dashboard() {
     return redirect("/");
   }
 
-    const categories = await db.category.findMany({
-      orderBy: {
-        name: 'asc'
-      }
-    });
+ const categories = await db.category.findMany({
+  orderBy: {
+    order: 'asc'
+  }
+});
+
 
   const dashboardData = (await getDashboardCourses(userId)) ?? {};
   const {
@@ -32,8 +33,8 @@ export default async function Dashboard() {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <InfoCard
           icon={Clock}
-          label="Available Courses"
-          numberOfItems={coursesInProgress.length ?? 0}
+          label="Available Levels"
+          numberOfItems={categories.length ?? 0}
         />
         <InfoCard
           icon={CheckCircle}
