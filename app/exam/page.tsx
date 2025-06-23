@@ -92,6 +92,8 @@ const autosaveTimerRef = useRef<NodeJS.Timeout | null>(null)
   useEffect(() => {
     fetchQuestions()
   }, [])
+
+
 useEffect(() => {
   if (submitted) return
 
@@ -114,6 +116,25 @@ useEffect(() => {
     }
   }
 }, [answers, currentPage, timeLeft, submitted, feedback])
+
+
+useEffect(() => {
+  if (submitted || timeLeft <= 0) return;
+
+  const interval = setInterval(() => {
+    setTimeLeft(prev => {
+      if (prev <= 1) {
+        clearInterval(interval)
+        handleSubmit()
+        return 0
+      }
+      return prev - 1
+    })
+  }, 1000)
+
+  return () => clearInterval(interval)
+}, [submitted, timeLeft]) // <-- Add timeLeft here
+
 
   useEffect(() => {
     const interval = setInterval(() => {
