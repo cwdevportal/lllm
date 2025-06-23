@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import axios from 'axios'
 import { Button } from '@/components/ui/button'
 import toast from 'react-hot-toast'
@@ -25,11 +25,14 @@ interface Feedback {
   isCorrect: boolean
 }
 
+
+
 const shuffle = <T,>(arr: T[]): T[] => [...arr].sort(() => Math.random() - 0.5)
 
 const ExamPage = () => {
   const router = useRouter()
 
+const autosaveTimerRef = useRef<NodeJS.Timeout | null>(null)
   const [questions, setQuestions] = useState<Question[]>([])
   const [answers, setAnswers] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
@@ -44,6 +47,8 @@ const ExamPage = () => {
   const answeredCount = Object.keys(answers).length
   const totalQuestions = questions.length
   const progress = Math.round((answeredCount / totalQuestions) * 100)
+
+
 
   const fetchQuestions = async () => {
     setLoading(true)
@@ -87,23 +92,28 @@ const ExamPage = () => {
   useEffect(() => {
     fetchQuestions()
   }, [])
+useEffect(() => {
+  if (submitted) return
 
-  useEffect(() => {
-    if (submitted) return
+  if (autosaveTimerRef.current) {
+    clearTimeout(autosaveTimerRef.current)
+  }
 
-    const interval = setInterval(() => {
-      setTimeLeft(prev => {
-        if (prev <= 1) {
-          clearInterval(interval)
-          handleSubmit()
-          return 0
-        }
-        return prev - 1
-      })
-    }, 1000)
+  autosaveTimerRef.current = setTimeout(() => {
+    localStorage.setItem('exam-answers', JSON.stringify(answers))
+    localStorage.setItem('exam-page', currentPage.toString())
+    localStorage.setItem('exam-timeLeft', timeLeft.toString())
+    localStorage.setItem('exam-submitted', submitted.toString())
+    localStorage.setItem('exam-feedback', JSON.stringify(feedback))
+    setAutosaveTime(new Date())
+  }, 1000) // autosave delay = 1 second
 
-    return () => clearInterval(interval)
-  }, [submitted])
+  return () => {
+    if (autosaveTimerRef.current) {
+      clearTimeout(autosaveTimerRef.current)
+    }
+  }
+}, [answers, currentPage, timeLeft, submitted, feedback])
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -113,7 +123,7 @@ const ExamPage = () => {
       localStorage.setItem('exam-submitted', submitted.toString())
       localStorage.setItem('exam-feedback', JSON.stringify(feedback))
       setAutosaveTime(new Date())
-    }, 10000)
+    }, 5000)
     return () => clearInterval(interval)
   }, [answers, currentPage, timeLeft, submitted, feedback])
 
@@ -179,16 +189,32 @@ const ExamPage = () => {
     }
   }
 
-  const handleRetake = () => {
-    localStorage.removeItem('exam-answers')
-    localStorage.removeItem('exam-page')
-    localStorage.removeItem('exam-timeLeft')
-    localStorage.removeItem('exam-submitted')
-    localStorage.removeItem('exam-feedback')
-    localStorage.removeItem('exam-questions')
-    toast.success('🔁 Restarting exam...')
-    fetchQuestions()
-  }
+const handleRetake = async () => {
+  setLoading(true)
+
+  // Clear saved data
+  localStorage.removeItem('exam-answers')
+  localStorage.removeItem('exam-page')
+  localStorage.removeItem('exam-timeLeft')
+  localStorage.removeItem('exam-submitted')
+  localStorage.removeItem('exam-feedback')
+  localStorage.removeItem('exam-questions')
+
+  // Reset local state
+  setAnswers({})
+  setSubmitted(false)
+  setFeedback([])
+  setCurrentPage(0)
+  setTimeLeft(45 * 60)
+  setAutosaveTime(null)
+
+  toast.success('🔁 Restarting exam...')
+
+  await fetchQuestions() // Wait until questions are reloaded
+  setLoading(false)      // Hide loading spinner
+}
+
+
 
   const handleNext = () => {
     if (currentPage < totalQuestions - 1) setCurrentPage(currentPage + 1)
