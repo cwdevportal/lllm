@@ -4,20 +4,20 @@ import { UserButton, useAuth } from '@clerk/nextjs'
 import { usePathname } from 'next/navigation'
 import React, { useEffect, useState } from 'react'
 import { Button } from './ui/button'
-import { LogOut, Loader2 } from 'lucide-react'
+import { LogOut, Loader2, Moon, Sun } from 'lucide-react'
 import Link from 'next/link'
 import { SearchInput } from './SearchInput'
 import { isTeacher as checkIsTeacher } from '@/lib/teacher'
+import { useTheme } from 'next-themes' // 👈 import theme hook
 
 export const NavbarRoutes = () => {
   const { userId } = useAuth()
   const pathname = usePathname()
+  const { theme, setTheme } = useTheme() // 👈 initialize theme hook
 
   const isTeacherPage = pathname?.startsWith('/teacher')
   const isPlayerPage = pathname?.includes('/courses')
   const isSearchPage = pathname === '/search'
-  
-
 
   const [loading, setLoading] = useState(false)
   const [isTeacherUser, setIsTeacherUser] = useState(false)
@@ -44,6 +44,10 @@ export const NavbarRoutes = () => {
     checkTeacher()
   }, [userId])
 
+  const handleThemeToggle = () => {
+    setTheme(theme === 'dark' ? 'light' : 'dark')
+  }
+
   return (
     <>
       {isSearchPage && (
@@ -51,7 +55,17 @@ export const NavbarRoutes = () => {
           <SearchInput />
         </div>
       )}
-      <div className="flex gap-x-2 ml-auto">
+      <div className="flex gap-x-2 ml-auto items-center">
+        {/* Theme Switch */}
+        <Button
+          size="icon"
+          variant="ghost"
+          onClick={handleThemeToggle}
+          aria-label="Toggle theme"
+        >
+          {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+        </Button>
+
         {isTeacherPage || isPlayerPage ? (
           <Link href="/">
             <Button size="sm" variant="ghost">

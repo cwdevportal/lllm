@@ -22,8 +22,8 @@ const iconMap: Record<Category["name"], IconType> = {
 };
 
 export const Categories = ({ items }: CategoriesProps) => {
-  return (
-    <div className="flex items-center gap-x-2 overflow-x-auto pb-2">
+  return (<div className="flex items-center gap-x-2 overflow-x-auto pb-2 px-1 scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-600">
+
       {items.map((item) => {
         const Icon = iconMap[item.name.trim().replace(/\s+/g, ' ')];
         return (

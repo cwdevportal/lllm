@@ -4,7 +4,7 @@ import './globals.css'
 import { ClerkProvider } from '@clerk/nextjs'
 import { ToasterProvider } from '@/components/providers/toaster-provider'
 import { ConfettiProvider } from '@/components/providers/ConfettiProvider'
-
+import { ThemeProvider } from '@/components/providers/theme-provider' // 👈 import it
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -19,14 +19,16 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-      <ClerkProvider>
-        <html lang="en">
-          <body className={inter.className}>
-            <ConfettiProvider/>
-            <ToasterProvider/>
+    <ClerkProvider>
+      <html lang="en" suppressHydrationWarning>
+        <body className={inter.className}>
+          <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+            <ConfettiProvider />
+            <ToasterProvider />
             {children}
-            </body>
-        </html>
-      </ClerkProvider>
+          </ThemeProvider>
+        </body>
+      </html>
+    </ClerkProvider>
   )
 }

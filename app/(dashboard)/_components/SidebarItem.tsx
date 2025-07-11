@@ -35,22 +35,30 @@ export const SidebarItem = ({ icon: Icon, label, href }: SideBarItemProps) => {
       type="button"
       disabled={isPending}
       className={cn(
-        "flex items-center gap-x-2 text-slate-500 text-sm font-[500] pl-6 transition-all hover:text-slate-600 hover:bg-slate-300/20",
-        isActive && "text-sky-700 bg-sky-200/20 hover:bg-sky-200/20 hover:text-sky-700",
+        "flex items-center gap-x-2 text-slate-500 dark:text-gray-400 text-sm font-medium pl-6 transition-all",
+        "hover:text-slate-600 dark:hover:text-gray-100 hover:bg-slate-300/20 dark:hover:bg-gray-700/50",
+        isActive &&
+          "text-sky-700 dark:text-sky-400 bg-sky-200/20 dark:bg-sky-900/30 hover:bg-sky-200/20 dark:hover:bg-sky-900/30",
         isPending && "opacity-50 cursor-not-allowed"
       )}
     >
       <div className="flex items-center gap-x-2 py-4">
         {isLoading && isPending ? (
-          <Loader2 size={22} className="animate-spin text-sky-700" />
+          <Loader2 size={22} className="animate-spin text-sky-700 dark:text-sky-400" />
         ) : (
-          <Icon size={22} className={cn("text-slate-500", isActive && "text-sky-700")} />
+          <Icon
+            size={22}
+            className={cn(
+              "text-slate-500 dark:text-gray-400",
+              isActive && "text-sky-700 dark:text-sky-400"
+            )}
+          />
         )}
         {label}
       </div>
       <div
         className={cn(
-          "ml-auto opacity-0 border-2 border-sky-700 h-full transition-all",
+          "ml-auto opacity-0 border-2 border-sky-700 dark:border-sky-400 h-full transition-all",
           isActive && "opacity-100"
         )}
       />

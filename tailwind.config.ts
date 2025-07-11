@@ -1,6 +1,8 @@
 import type { Config } from 'tailwindcss'
 const { withUt } = require("uploadthing/tw");
 const config: Config = withUt({
+  
+  darkMode: 'class', // ← important!
   content: [
     './pages/**/*.{js,ts,jsx,tsx,mdx}',
     './components/**/*.{js,ts,jsx,tsx,mdx}',
